@@ -1,0 +1,171 @@
+<%- include('partials/header', { title: 'All Students' }) %>
+
+<!-- Flash messages -->
+<% if (message) { %>
+  <div class="alert alert-success">✅ <%= message %></div>
+<% } %>
+<% if (error) { %>
+  <div class="alert alert-error">❌ <%= error %></div>
+<% } %>
+
+<!-- Stats Row -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon">🎓</div>
+    <div class="stat-label">Total Enrolled</div>
+    <div class="stat-value"><%= stats.total %></div>
+    <div class="stat-sub">across all branches</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-label">Average CGPA</div>
+    <div class="stat-value"><%= stats.averageCgpa %></div>
+    <div class="stat-sub">institute average</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🏁</div>
+    <div class="stat-label">Graduating Soon</div>
+    <div class="stat-value"><%= stats.byYear.BE %></div>
+    <div class="stat-sub">students in final year</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🏛️</div>
+    <div class="stat-label">Departments</div>
+    <div class="stat-value"><%= Object.keys(stats.byBranch).length %></div>
+    <div class="stat-sub">branches active</div>
+  </div>
+</div>
+
+<!-- Filter / Search Form -->
+<form class="toolbar" method="GET" action="/students">
+  <div class="search-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+    <input
+      type="text"
+      name="search"
+      placeholder="Search name, roll no, email…"
+      value="<%= query.search || '' %>"
+    />
+  </div>
+
+  <select name="branch">
+    <option value="">All Branches</option>
+    <% branches.forEach(b => { %>
+      <option value="<%= b %>" <%= query.branch === b ? 'selected' : '' %>><%= b %></option>
+    <% }) %>
+  </select>
+
+  <select name="year">
+    <option value="">All Years</option>
+    <% years.forEach(y => { %>
+      <% const labels = { FE: 'FE – First Year', SE: 'SE – Second Year', TE: 'TE – Third Year', BE: 'BE – Final Year' } %>
+      <option value="<%= y %>" <%= query.year === y ? 'selected' : '' %>><%= labels[y] %></option>
+    <% }) %>
+  </select>
+
+  <select name="sort">
+    <option value="">Default Sort</option>
+    <option value="name"   <%= query.sort === 'name'   ? 'selected' : '' %>>Sort: Name</option>
+    <option value="cgpa"   <%= query.sort === 'cgpa'   ? 'selected' : '' %>>Sort: CGPA ↓</option>
+    <option value="year"   <%= query.sort === 'year'   ? 'selected' : '' %>>Sort: Year</option>
+    <option value="rollNo" <%= query.sort === 'rollNo' ? 'selected' : '' %>>Sort: Roll No</option>
+  </select>
+
+  <button type="submit" class="btn-secondary">Apply</button>
+  <a href="/students" class="btn-ghost">Reset</a>
+</form>
+
+<!-- Student Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Roll No</th>
+        <th>Student</th>
+        <th>Branch</th>
+        <th>Year</th>
+        <th>CGPA</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (students.length === 0) { %>
+        <tr>
+          <td colspan="7">
+            <div class="empty">
+              <div class="empty-icon">🔍</div>
+              <p>No students found</p>
+            </div>
+          </td>
+        </tr>
+      <% } else { %>
+        <% students.forEach(function(s) { %>
+          <%
+            // Branch short code
+            let code = 'OT';
+            if (s.branch.startsWith('Computer S')) code = 'CS';
+            else if (s.branch.startsWith('Computer')) code = 'CE';
+            else if (s.branch.startsWith('Elec'))     code = 'ECS';
+            else if (s.branch.startsWith('Mech'))     code = 'ME';
+
+            // Avatar initials
+            const initials = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+
+            // CGPA — use CSS class, no inline color
+            let cgpaClass = 'cgpa-low';
+            if (s.cgpa >= 9)        cgpaClass = 'cgpa-high';
+            else if (s.cgpa >= 7.5) cgpaClass = 'cgpa-mid';
+            else if (s.cgpa >= 6)   cgpaClass = 'cgpa-ok';
+            const cgpaWidth = s.cgpa ? Math.round(s.cgpa * 10) + '%' : '0%';
+          %>
+          <tr>
+            <td class="roll-cell"><%= s.rollNo %></td>
+            <td>
+              <div class="name-group">
+                <div class="avatar avatar-sm avatar-<%= code %>"><%= initials %></div>
+                <div>
+                  <div class="name-main"><%= s.name %></div>
+                  <% if (s.email) { %>
+                    <div class="name-sub"><%= s.email %></div>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+            <td><span class="branch-pill branch-<%= code %>"><%= code %></span></td>
+            <td><span class="year-badge year-<%= s.year %>"><%= s.year %></span></td>
+            <td>
+              <% if (s.cgpa !== null && s.cgpa !== undefined) { %>
+                <div class="cgpa-group">
+                  <span><%= +s.cgpa %></span>
+                  <div class="cgpa-track">
+                    <div class="cgpa-fill <%= cgpaClass %>" style="width:<%= cgpaWidth %>"></div>
+                  </div>
+                </div>
+              <% } else { %>
+                <span class="na">—</span>
+              <% } %>
+            </td>
+            <td class="phone-cell"><%= s.phone || '—' %></td>
+            <td>
+              <div class="actions">
+                <a href="/students/<%= s.id %>" class="btn-view" title="View">👁</a>
+                <a href="/students/<%= s.id %>/edit" class="btn-edit" title="Edit">✎</a>
+                <form method="POST" action="/students/<%= s.id %>/delete" style="display:inline" onsubmit="return confirm('Delete <%= s.name %>?')">
+                  <button type="submit" class="btn-del" title="Delete">✕</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Result count -->
+<div class="result-count">
+  Showing <strong><%= students.length %></strong> student<%= students.length !== 1 ? 's' : '' %>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,266 @@
+<%- include('partials/header', { title: student.name }) %>
+
+<%
+  let code = 'OT';
+  if (student.branch.startsWith('Computer S')) code = 'CS';
+  else if (student.branch.startsWith('Computer')) code = 'CE';
+  else if (student.branch.startsWith('Elec'))     code = 'ECS';
+  else if (student.branch.startsWith('Mech'))     code = 'ME';
+
+  const initials = student.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const yearFull = { FE: 'First Year', SE: 'Second Year', TE: 'Third Year', BE: 'Final Year' };
+
+  let cgpaClass = 'cgpa-low';
+  if (student.cgpa >= 9)        cgpaClass = 'cgpa-high';
+  else if (student.cgpa >= 7.5) cgpaClass = 'cgpa-mid';
+  else if (student.cgpa >= 6)   cgpaClass = 'cgpa-ok';
+  const cgpaWidth = student.cgpa ? Math.round(student.cgpa * 10) + '%' : '0%';
+%>
+
+<!-- ── ID Card Modal ─────────────────────────────────────────── -->
+<div class="modal-bg" id="cardModal">
+  <div class="modal-inner">
+    <button class="modal-close-btn" onclick="closeModal()">✕ Close</button>
+
+    <div class="id-card" id="idCard">
+
+      <!-- Card Header -->
+      <div class="id-card-top">
+        <div class="id-card-logo">🎓</div>
+        <div class="id-card-college">
+          <div class="id-card-college-name">Fr. Conceição Rodrigues</div>
+          <div class="id-card-college-name">College of Engineering</div>
+          <div class="id-card-college-sub">Bandra West, Mumbai — 400 050</div>
+        </div>
+      </div>
+
+      <div class="id-card-divider"></div>
+
+      <!-- Card Body -->
+      <div class="id-card-body">
+        <div class="id-card-left">
+          <div class="id-card-avatar avatar-<%= code %>"><%= initials %></div>
+          <div class="id-card-type">STUDENT</div>
+        </div>
+        <div class="id-card-right">
+          <div class="id-card-name"><%= student.name %></div>
+          <div class="id-card-branch"><%= student.branch %></div>
+
+          <div class="id-card-fields">
+            <div class="id-card-row">
+              <span class="id-card-key">Roll No</span>
+              <span class="id-card-val"><%= student.rollNo %></span>
+            </div>
+            <div class="id-card-row">
+              <span class="id-card-key">Year</span>
+              <span class="id-card-val"><span class="year-badge year-<%= student.year %>"><%= student.year %></span></span>
+            </div>
+            <div class="id-card-row">
+              <span class="id-card-key">Phone</span>
+              <span class="id-card-val"><%= student.phone || 'Not provided' %></span>
+            </div>
+            <div class="id-card-row">
+              <span class="id-card-key">Email</span>
+              <span class="id-card-val id-card-email"><%= student.email || 'Not provided' %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="id-card-divider"></div>
+
+      <!-- Card Footer -->
+      <div class="id-card-footer">
+        <span class="id-card-footer-text">Valid for Academic Year 2025–26</span>
+        <span class="id-card-footer-text">ID: #<%= String(student.id).padStart(4,'0') %></span>
+      </div>
+    </div>
+
+    <div class="id-card-actions">
+      <button class="btn-ghost" onclick="printCard()">🖨 Print Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Page ─────────────────────────────────────────────── -->
+<div class="detail-page">
+
+  <a href="/students" class="back-link">← Back to All Students</a>
+
+  <div class="detail-card">
+
+    <div class="detail-header">
+      <div class="avatar avatar-lg avatar-<%= code %>"><%= initials %></div>
+      <div class="detail-info">
+        <h1 class="detail-name"><%= student.name %></h1>
+        <div class="detail-meta">
+          <span class="year-badge year-<%= student.year %>"><%= student.year %> — <%= yearFull[student.year] %></span>
+          <span class="branch-pill branch-<%= code %>"><%= code %></span>
+          <span class="roll-chip"># <%= student.rollNo %></span>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-card" onclick="document.getElementById('cardModal').classList.add('open')">🪪 ID Card</button>
+        <a href="/students/<%= student.id %>/edit" class="btn-primary">✎ Edit</a>
+        <form method="POST" action="/students/<%= student.id %>/delete" onsubmit="return confirm('Delete <%= student.name %>?')">
+          <button type="submit" class="btn-danger">✕ Delete</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+
+      <div class="detail-field">
+        <div class="field-label">Roll No</div>
+        <div class="field-value mono"><%= student.rollNo %></div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Full Name</div>
+        <div class="field-value"><%= student.name %></div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Branch</div>
+        <div class="field-value"><%= student.branch %></div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Year</div>
+        <div class="field-value">
+          <span class="year-badge year-<%= student.year %>"><%= student.year %></span>
+          <span class="field-hint"><%= yearFull[student.year] %></span>
+        </div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Email</div>
+        <div class="field-value">
+          <% if (student.email) { %>
+            <a href="mailto:<%= student.email %>" class="link"><%= student.email %></a>
+          <% } else { %>
+            <span class="na">Not provided</span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Phone</div>
+        <div class="field-value mono">
+          <% if (student.phone) { %>
+            <%= student.phone %>
+          <% } else { %>
+            <span class="na">Not provided</span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">CGPA</div>
+        <div class="field-value">
+          <% if (student.cgpa !== null && student.cgpa !== undefined) { %>
+            <div class="cgpa-big">
+              <span class="cgpa-number <%= cgpaClass %>"><%= +student.cgpa %></span>
+              <span class="field-hint">/ 10.0</span>
+            </div>
+            <div class="cgpa-track cgpa-track-wide">
+              <div class="cgpa-fill <%= cgpaClass %>" data-width="<%= cgpaWidth %>"></div>
+            </div>
+          <% } else { %>
+            <span class="na">Not provided</span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="detail-field">
+        <div class="field-label">Student ID</div>
+        <div class="field-value mono">#<%= String(student.id).padStart(3,'0') %></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.cgpa-fill[data-width]').forEach(el => {
+    el.style.width = el.dataset.width;
+  });
+  function closeModal() {
+    document.getElementById('cardModal').classList.remove('open');
+  }
+  document.getElementById('cardModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function printCard() {
+    const cardHTML = document.getElementById('idCard').outerHTML;
+    const win = window.open('', '_blank', 'width=600,height=750,left=200,top=40,resizable=yes,scrollbars=yes');
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Student ID Card</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Outfit', sans-serif;
+    }
+    .id-card {
+      width: 420px;
+      margin: 40px auto;
+      background: #0f1425;
+      border: 1px solid rgba(97,117,255,.35);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    }
+    .id-card-top { padding: 18px 22px; background: linear-gradient(135deg, rgba(97,117,255,.35), rgba(139,92,246,.25)); border-bottom: 1px solid rgba(97,117,255,.2); display: flex; align-items: center; gap: 14px; }
+    .id-card-logo { font-size: 32px; flex-shrink: 0; }
+    .id-card-college-name { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13.5px; color: rgba(255,255,255,.92); line-height: 1.35; }
+    .id-card-college-sub  { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 3px; }
+    .id-card-divider { height: 1px; background: rgba(255,255,255,.08); }
+    .id-card-body { padding: 22px; display: flex; gap: 20px; align-items: flex-start; }
+    .id-card-left { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+    .id-card-avatar { width: 80px; height: 80px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: #fff; border: 2px solid rgba(255,255,255,.15); }
+    .avatar-CE  { background: #2fd4a0; }
+    .avatar-CS  { background: #6175ff; }
+    .avatar-ECS { background: #f5c842; color: #1a1400; }
+    .avatar-ME  { background: #ff6b6b; }
+    .id-card-type { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .14em; color: rgba(255,255,255,.35); text-transform: uppercase; margin-top: 4px; }
+    .id-card-right { flex: 1; min-width: 0; }
+    .id-card-name   { font-family: 'DM Serif Display', serif; font-size: 21px; color: #fff; margin-bottom: 3px; line-height: 1.2; }
+    .id-card-branch { font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 18px; }
+    .id-card-fields { display: flex; flex-direction: column; gap: 10px; }
+    .id-card-row    { display: flex; align-items: baseline; gap: 10px; }
+    .id-card-key    { font-size: 10px; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .08em; width: 50px; flex-shrink: 0; }
+    .id-card-val    { font-family: 'DM Mono', monospace; font-size: 13px; color: rgba(255,255,255,.85); }
+    .id-card-email  { font-size: 11.5px; word-break: break-all; }
+    .year-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 5px; }
+    .year-FE { background: rgba(97,117,255,.22);  color: #8a9dff; }
+    .year-SE { background: rgba(47,212,160,.22);  color: #2fd4a0; }
+    .year-TE { background: rgba(245,200,66,.22);  color: #f5c842; }
+    .year-BE { background: rgba(255,107,107,.22); color: #ff6b6b; }
+    .id-card-footer { padding: 12px 22px; background: rgba(0,0,0,.3); border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+    .id-card-footer-text { font-size: 10px; color: rgba(255,255,255,.3); font-family: 'DM Mono', monospace; }
+  </style>
+</head>
+<body>
+  ${cardHTML}
+  <script>
+    window.onload = function() {
+      document.fonts.ready.then(function() { window.print(); });
+    };
+  <\/script>
+</body>
+</html>`);
+    win.document.close();
+  }
+</script>
+
+<%- include('partials/footer') %>

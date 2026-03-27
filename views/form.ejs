@@ -1,0 +1,173 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="form-page">
+  <div class="form-card">
+
+    <div class="form-card-header">
+      <a href="/students" class="back-link">← Back to List</a>
+      <h1 class="form-title"><%= title %></h1>
+      <p class="form-sub">Fields marked <span class="req">*</span> are required</p>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error" style="margin-bottom:20px">❌ <%= error %></div>
+    <% } %>
+
+    <form method="POST" action="<%= action %>" novalidate onsubmit="return clientValidate(event)">
+
+      <!-- Row 1: Roll No + Name -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="rollNo"><span class="req">*</span> Roll No</label>
+          <input type="text" id="rollNo" name="rollNo" placeholder="e.g. 10455" value="<%= student.rollNo || '' %>" />
+          <span class="field-err" id="err-rollNo"></span>
+        </div>
+        <div class="form-group">
+          <label for="name"><span class="req">*</span> Full Name</label>
+          <input type="text" id="name" name="name" placeholder="e.g. Aanya Sharma" value="<%= student.name || '' %>" />
+          <span class="field-err" id="err-name"></span>
+        </div>
+      </div>
+
+      <!-- Row 2: Branch + Year -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="branch"><span class="req">*</span> Branch</label>
+          <select id="branch" name="branch">
+            <option value="">— Select Branch —</option>
+            <% branches.forEach(b => { %>
+              <option value="<%= b %>" <%= student.branch === b ? 'selected' : '' %>><%= b %></option>
+            <% }) %>
+          </select>
+          <span class="field-err" id="err-branch"></span>
+        </div>
+        <div class="form-group">
+          <label for="year"><span class="req">*</span> Year</label>
+          <select id="year" name="year">
+            <option value="">— Select Year —</option>
+            <% const yearLabels = { FE: 'FE — First Year', SE: 'SE — Second Year', TE: 'TE — Third Year', BE: 'BE — Final Year' } %>
+            <% years.forEach(y => { %>
+              <option value="<%= y %>" <%= student.year === y ? 'selected' : '' %>><%= yearLabels[y] %></option>
+            <% }) %>
+          </select>
+          <span class="field-err" id="err-year"></span>
+        </div>
+      </div>
+
+      <!-- Row 3: Email + Phone -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email <span class="label-hint">(must contain @)</span></label>
+          <input type="text" id="email" name="email" placeholder="e.g. 10455@crce.edu.in" value="<%= student.email || '' %>" />
+          <span class="field-err" id="err-email"></span>
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone <span class="label-hint">(exactly 10 digits)</span></label>
+          <input type="text" id="phone" name="phone" placeholder="e.g. 9876543210" value="<%= student.phone || '' %>" maxlength="10" />
+          <span class="field-err" id="err-phone"></span>
+        </div>
+      </div>
+
+      <!-- Row 4: CGPA -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cgpa">CGPA <span class="label-hint">(0.0 – 10.0, optional)</span></label>
+          <input type="text" id="cgpa" name="cgpa" placeholder="e.g. 8.5" value="<%= student.cgpa !== null && student.cgpa !== undefined ? student.cgpa : '' %>" />
+          <span class="field-err" id="err-cgpa"></span>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/students" class="btn-ghost">Cancel</a>
+        <button type="submit" class="btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
+          <%= title %>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function clientValidate(e) {
+  let valid = true;
+
+  // ── Helper: show/clear error ──────────────────────────────────
+  function showErr(id, msg) {
+    document.getElementById(id).classList.add('error');
+    document.getElementById('err-' + id).textContent = '⚠ ' + msg;
+    valid = false;
+  }
+  function clearAll() {
+    ['rollNo','name','branch','year','email','phone','cgpa'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('error'); }
+      const err = document.getElementById('err-' + id);
+      if (err) err.textContent = '';
+    });
+  }
+
+  clearAll();
+
+  const rollNo = document.getElementById('rollNo').value.trim();
+  const name   = document.getElementById('name').value.trim();
+  const branch = document.getElementById('branch').value;
+  const year   = document.getElementById('year').value;
+  const email  = document.getElementById('email').value.trim();
+  const phone  = document.getElementById('phone').value.trim();
+  const cgpa   = document.getElementById('cgpa').value.trim();
+
+  // Required fields
+  if (!rollNo)  showErr('rollNo', 'Roll No is required');
+  if (!name)    showErr('name',   'Full name is required');
+  if (!branch)  showErr('branch', 'Please select a branch');
+  if (!year)    showErr('year',   'Please select a year');
+
+  // Email — must contain @ and a dot after @
+  if (email) {
+    const atIdx = email.indexOf('@');
+    if (atIdx < 1 || !email.slice(atIdx + 1).includes('.')) {
+      showErr('email', 'Enter a valid email (must contain @ and domain)');
+    }
+  }
+
+  // Phone — must be exactly 10 digits, no letters
+  if (phone) {
+    if (!/^\d{10}$/.test(phone)) {
+      showErr('phone', 'Phone must be exactly 10 digits, numbers only');
+    }
+  }
+
+  // CGPA — numeric, 0–10
+  if (cgpa) {
+    if (isNaN(cgpa) || +cgpa < 0 || +cgpa > 10) {
+      showErr('cgpa', 'CGPA must be a number between 0 and 10');
+    } else if (!/^\d+(\.\d{1,2})?$/.test(cgpa)) {
+      showErr('cgpa', 'CGPA can have at most 2 decimal places (e.g. 9.82)');
+    }
+  }
+
+  if (!valid) e.preventDefault();
+  return valid;
+}
+
+// Real-time feedback — clear error as user types/selects
+['rollNo','name','branch','year','email','phone','cgpa'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', () => {
+      el.classList.remove('error');
+      const err = document.getElementById('err-' + id);
+      if (err) err.textContent = '';
+    });
+    el.addEventListener('change', () => {
+      el.classList.remove('error');
+      const err = document.getElementById('err-' + id);
+      if (err) err.textContent = '';
+    });
+  }
+});
+</script>
+
+<%- include('partials/footer') %>
